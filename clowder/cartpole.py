@@ -1,16 +1,16 @@
 import argparse
-import gym
-import numpy as np
 import os
 from itertools import count
 
+import gym
+import numpy as np
 import torch
 import torch.distributed.rpc as rpc
 import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.distributed.rpc import RRef, rpc_sync, rpc_async, remote
+from torch.distributed.rpc import RRef, remote, rpc_async, rpc_sync
 from torch.distributions import Categorical
 
 TOTAL_EPISODE_STEP = 5000
@@ -151,7 +151,7 @@ class Agent:
 
     def run_episode(self, n_steps=0):
         r"""
-        Run one episode. The agent will tell each oberser to run n_steps.
+        Run one episode. The agent will tell each obverses to run n_steps.
         """
         futs = []
         for ob_rref in self.ob_rrefs:
