@@ -7,11 +7,11 @@ RUN apt-get update -y && \
     apt-get -y install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev \
     python3-pip xvfb ffmpeg git build-essential python-opengl wget checkinstall && \
     cd /usr/src && \
-    sudo wget https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz && \
-    sudo tar xzf Python-3.10.4.tgz && \
+    wget https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz && \
+    tar xzf Python-3.10.4.tgz && \
     cd Python-3.10.4 && \
-    sudo ./configure --enable-optimizations --prefix=/usr && \
-    sudo make install
+    ./configure --enable-optimizations --prefix=/usr && \
+    make install
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # install python dependencies
