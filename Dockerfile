@@ -2,10 +2,11 @@ FROM nvidia/cuda:11.4.2-runtime-ubuntu20.04
 
 # install ubuntu dependencies
 ENV DEBIAN_FRONTEND=noninteractive 
-RUN apt-get update -y && \
+RUN apt-get remove python3 \
+    apt-get update -y && \
     apt-get upgrade -y && \
     apt-get -y install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev \
-    python3-pip xvfb ffmpeg git build-essential python-opengl wget checkinstall && \
+    xvfb ffmpeg git build-essential python-opengl wget checkinstall && \
     cd /usr/src && \
     wget https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz && \
     tar xzf Python-3.10.4.tgz && \
