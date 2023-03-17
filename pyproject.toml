@@ -3,15 +3,12 @@ name = "clowder"
 version = "0.0.1"
 description = "High-quality single file implementation of Scalable Deep Reinforcement Learning algorithms with research-friendly features"
 authors = ["Chufan Chen <allenplato28@gmail.com>"]
-packages = [
-    { include = "clowder" },
-]
 keywords = ["reinforcement", "machine", "learning", "research"]
 license="MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<=3.10.4"
+python = ">=3.9,<3.11"
 tensorboard = "^2.10.0"
 wandb = "^0.13.6"
 gym = "0.23.1"

@@ -1,21 +1,15 @@
-FROM nvidia/cuda:11.4.2-runtime-ubuntu20.04
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
 # install ubuntu dependencies
 ENV DEBIAN_FRONTEND=noninteractive 
-RUN apt-get remove python3 && \
-    apt-get update -y && \
+RUN apt-get update -y && \
     apt-get upgrade -y && \
-    apt-get -y install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev \
-    xvfb ffmpeg git build-essential python-opengl wget checkinstall && \
-    cd /usr/src && \
-    wget https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz && \
-    tar xzf Python-3.10.4.tgz && \
-    cd Python-3.10.4 && \
-    ./configure --enable-optimizations --prefix=/usr && \
-    make install
+    apt-get -y install xvfb ffmpeg git build-essential wget checkinstall python3-pip && \
+    apt --fix-broken install 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # install python dependencies
+RUN pip install PyOpenGL PyOpenGL_accelerate
 RUN pip install poetry --upgrade
 COPY pyproject.toml pyproject.toml
 COPY poetry.lock poetry.lock
@@ -37,4 +31,4 @@ RUN chmod 777 /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # copy local files
-COPY ./clowder /clowder
+COPY clowder/ /clowder/
