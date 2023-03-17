@@ -27,6 +27,7 @@ TOTAL_EPISODE_STEP = 5000
 AGENT_NAME = "agent"
 OBSERVER_NAME = "observer{}"
 
+
 def parse_args():
     # fmt: off
     parser = argparse.ArgumentParser()
@@ -92,6 +93,7 @@ def parse_args():
     # fmt: on
     return args
 
+
 def _call_method(method, rref, *args, **kwargs):
     r"""
     a helper function to call a method on the given RRef
@@ -137,6 +139,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.constant_(layer.bias, bias_const)
     return layer
 
+
 class Observer:
     r"""
     An observer has exclusive access to its own environment. Each observer
@@ -144,6 +147,7 @@ class Observer:
     select an action. Then, the observer applies the action to its environment
     and reports the reward to the agent.
     """
+
     def __init__(self, envs):
         self.id = rpc.get_worker_info().id
         self.envs = envs
@@ -158,9 +162,9 @@ class Observer:
         """
         next_obs = torch.Tensor(self.envs.reset()).to(device)
         next_done = torch.zeros(args.num_envs).to(device)
-        
+
         for step in range(0, num_steps):
-            
+
             # send the state to the agent to get an action
             action = _remote_method(Agent.report_and_select_action, agent_rref, self.id, step, next_obs, next_done)
 
@@ -170,11 +174,11 @@ class Observer:
             # report the reward to the agent for training purpose
             _remote_method(Agent.report_reward, agent_rref, self.id, reward)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(done).to(device)
-            
+
             for item in info:
                 if "episode" in item.keys():
                     _remote_method(Agent.report_bootstrap, agent_rref, self.id, next_obs)
-                        
+
             if self.id == 1:
                 for item in info:
                     if "episode" in item.keys():
@@ -214,17 +218,19 @@ class Agent(nn.Module):
         for ob_rank in range(1, world_size):
             ob_info = rpc.get_worker_info(OBSERVER_NAME.format(ob_rank))
             self.ob_rrefs.append(remote(ob_info, Observer))
-            self.obs[ob_info.id] = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
+            self.obs[ob_info.id] = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(
+                device
+            )
             self.actions[ob_info.id] = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape).to(device)
             self.logprobs[ob_info.id] = torch.zeros((args.num_steps, args.num_envs)).to(device)
             self.rewards[ob_info.id] = torch.zeros((args.num_steps, args.num_envs)).to(device)
             self.dones[ob_info.id] = torch.zeros((args.num_steps, args.num_envs)).to(device)
             self.values[ob_info.id] = torch.zeros((args.num_steps, args.num_envs)).to(device)
             self.next_obs[ob_info.id] = torch.zeros((args.num_envs) + envs.single_observation_space.shape).to(device)
-    
+
     def finish_episode(self):
-        self.obs = torch.cat([self.obs[ob_rank] for ob_rank in  range(1, self.world_size)])
-        self.actions = torch.cat([self.actions[ob_rank] for ob_rank in  range(1, self.world_size)])
+        self.obs = torch.cat([self.obs[ob_rank] for ob_rank in range(1, self.world_size)])
+        self.actions = torch.cat([self.actions[ob_rank] for ob_rank in range(1, self.world_size)])
         self.logprobs = torch.cat([self.logprobs[ob_rank] for ob_rank in range(1, self.world_size)])
         self.rewards = torch.cat([self.rewards[ob_rank] for ob_rank in range(1, self.world_size)])
         self.rewards = torch.cat([self.rewards[ob_rank] for ob_rank in range(1, self.world_size)])
@@ -234,32 +240,32 @@ class Agent(nn.Module):
         next_value = self.get_value(self.next_obs).reshape(1, -1)
         if args.gae:
             advantages = torch.zeros_like(rewards).to(device)
-                lastgaelam = 0
-                for t in reversed(range(args.num_steps)):
-                    if t == args.num_steps - 1:
-                        nextnonterminal = 1.0 - next_done
-                        nextvalues = next_value
-                    else:
-                        nextnonterminal = 1.0 - dones[t + 1]
-                        nextvalues = values[t + 1]
-                    delta = rewards[t] + args.gamma * nextvalues * nextnonterminal - values[t]
-                    advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * nextnonterminal * lastgaelam
-                returns = advantages + values
-            else:
-                returns = torch.zeros_like(rewards).to(device)
-                for t in reversed(range(args.num_steps)):
-                    if t == args.num_steps - 1:
-                        nextnonterminal = 1.0 - next_done
-                        next_return = next_value
-                    else:
-                        nextnonterminal = 1.0 - dones[t + 1]
-                        next_return = returns[t + 1]
-                    returns[t] = rewards[t] + args.gamma * nextnonterminal * next_return
-                advantages = returns - values
-    
+            lastgaelam = 0
+            for t in reversed(range(args.num_steps)):
+                if t == args.num_steps - 1:
+                    nextnonterminal = 1.0 - next_done
+                    nextvalues = next_value
+                else:
+                    nextnonterminal = 1.0 - dones[t + 1]
+                    nextvalues = values[t + 1]
+                delta = rewards[t] + args.gamma * nextvalues * nextnonterminal - values[t]
+                advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * nextnonterminal * lastgaelam
+            returns = advantages + values
+        else:
+            returns = torch.zeros_like(rewards).to(device)
+            for t in reversed(range(args.num_steps)):
+                if t == args.num_steps - 1:
+                    nextnonterminal = 1.0 - next_done
+                    next_return = next_value
+                else:
+                    nextnonterminal = 1.0 - dones[t + 1]
+                    next_return = returns[t + 1]
+                returns[t] = rewards[t] + args.gamma * nextnonterminal * next_return
+            advantages = returns - values
+
     def report_and_bootstrap(self, ob_id, next_obs):
         self.next_obs[ob_id] = next_obs
-    
+
     def report_and_select_action(self, ob_id, step, next_obs, next_done):
         r"""
 
@@ -289,11 +295,7 @@ class Agent(nn.Module):
         for ob_rref in self.ob_rrefs:
             # make async RPC to kick off an episode on all observers
             futs.append(
-                rpc_async(
-                    ob_rref.owner(),
-                    _call_method,
-                    args=(Observer.run_episode, ob_rref, self.agent_rref, n_steps)
-                )
+                rpc_async(ob_rref.owner(), _call_method, args=(Observer.run_episode, ob_rref, self.agent_rref, n_steps))
             )
 
         # wait until all obervers have finished this episode
@@ -311,13 +313,14 @@ class Agent(nn.Module):
             action = probs.sample()
         return action, probs.log_prob(action), probs.entropy(), self.critic(hidden)
 
+
 def run_worker(rank, world_size):
     r"""
     This is the entry point for all processes. The rank 0 is the agent. All
     other ranks are observers.
     """
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '29500'
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "29500"
     if rank == 0:
         # rank0 is the agent
         rpc.init_rpc(AGENT_NAME, rank=rank, world_size=world_size)
@@ -329,17 +332,21 @@ def run_worker(rank, world_size):
             last_reward = agent.finish_episode()
 
             if i_episode % args.log_interval == 0:
-                print('Episode {}\tLast reward: {:.2f}\tAverage reward: {:.2f}'.format(
-                      i_episode, last_reward, agent.running_reward))
+                print(
+                    "Episode {}\tLast reward: {:.2f}\tAverage reward: {:.2f}".format(
+                        i_episode, last_reward, agent.running_reward
+                    )
+                )
 
             if agent.running_reward > agent.reward_threshold:
-                print("Solved! Running reward is now {}!".format(agent.running_reward))
+                print(f"Solved! Running reward is now {agent.running_reward}!")
                 break
     else:
         # other ranks are the observer
         rpc.init_rpc(OBSERVER_NAME.format(rank), rank=rank, world_size=world_size)
         # observers passively waiting for instructions from agents
     rpc.shutdown()
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -367,13 +374,8 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = args.torch_deterministic
-    
-    mp.spawn(
-        run_worker,
-        args=(args.world_size, ),
-        nprocs=args.world_size,
-        join=True
-    )
+
+    mp.spawn(run_worker, args=(args.world_size,), nprocs=args.world_size, join=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 

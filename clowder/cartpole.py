@@ -17,15 +17,15 @@ TOTAL_EPISODE_STEP = 5000
 AGENT_NAME = "agent"
 OBSERVER_NAME = "observer{}"
 
-parser = argparse.ArgumentParser(description='PyTorch RPC RL example')
-parser.add_argument('--world-size', type=int, default=2, metavar='W',
-                    help='world size for RPC, rank 0 is the agent, others are observers')
-parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
-                    help='discount factor (default: 0.99)')
-parser.add_argument('--seed', type=int, default=543, metavar='N',
-                    help='random seed (default: 543)')
-parser.add_argument('--log-interval', type=int, default=10, metavar='N',
-                    help='interval between training status logs (default: 10)')
+parser = argparse.ArgumentParser(description="PyTorch RPC RL example")
+parser.add_argument(
+    "--world-size", type=int, default=2, metavar="W", help="world size for RPC, rank 0 is the agent, others are observers"
+)
+parser.add_argument("--gamma", type=float, default=0.99, metavar="G", help="discount factor (default: 0.99)")
+parser.add_argument("--seed", type=int, default=543, metavar="N", help="random seed (default: 543)")
+parser.add_argument(
+    "--log-interval", type=int, default=10, metavar="N", help="interval between training status logs (default: 10)"
+)
 args = parser.parse_args()
 
 torch.manual_seed(args.seed)
@@ -53,8 +53,9 @@ class Policy(nn.Module):
     Copying the code to make these two examples independent.
     See https://github.com/pytorch/examples/tree/main/reinforcement_learning
     """
+
     def __init__(self):
-        super(Policy, self).__init__()
+        super().__init__()
         self.affine1 = nn.Linear(4, 128)
         self.dropout = nn.Dropout(p=0.6)
         self.affine2 = nn.Linear(128, 2)
@@ -69,6 +70,7 @@ class Policy(nn.Module):
         action_scores = self.affine2(x)
         return F.softmax(action_scores, dim=1)
 
+
 class Observer:
     r"""
     An observer has exclusive access to its own environment. Each observer
@@ -82,9 +84,10 @@ class Observer:
     an application using the RPC API. Developers can extend the similar idea to
     other applications with much more expensive environment.
     """
+
     def __init__(self):
         self.id = rpc.get_worker_info().id
-        self.env = gym.make('CartPole-v1')
+        self.env = gym.make("CartPole-v1")
         self.env.seed(args.seed)
 
     def run_episode(self, agent_rref, n_steps):
@@ -109,6 +112,7 @@ class Observer:
             if done:
                 break
 
+
 class Agent:
     def __init__(self, world_size):
         self.ob_rrefs = []
@@ -119,7 +123,7 @@ class Agent:
         self.optimizer = optim.Adam(self.policy.parameters(), lr=1e-2)
         self.eps = np.finfo(np.float32).eps.item()
         self.running_reward = 0
-        self.reward_threshold = gym.make('CartPole-v1').spec.reward_threshold
+        self.reward_threshold = gym.make("CartPole-v1").spec.reward_threshold
         for ob_rank in range(1, world_size):
             ob_info = rpc.get_worker_info(OBSERVER_NAME.format(ob_rank))
             self.ob_rrefs.append(remote(ob_info, Observer))
@@ -157,11 +161,7 @@ class Agent:
         for ob_rref in self.ob_rrefs:
             # make async RPC to kick off an episode on all observers
             futs.append(
-                rpc_async(
-                    ob_rref.owner(),
-                    _call_method,
-                    args=(Observer.run_episode, ob_rref, self.agent_rref, n_steps)
-                )
+                rpc_async(ob_rref.owner(), _call_method, args=(Observer.run_episode, ob_rref, self.agent_rref, n_steps))
             )
 
         # wait until all obervers have finished this episode
@@ -184,7 +184,7 @@ class Agent:
             rewards.extend(self.rewards[ob_id])
 
         # use the minimum observer reward to calculate the running reward
-        min_reward = min([sum(self.rewards[ob_id]) for ob_id in self.rewards])
+        min_reward = min(sum(self.rewards[ob_id]) for ob_id in self.rewards)
         self.running_reward = 0.05 * min_reward + (1 - 0.05) * self.running_reward
 
         # clear saved probs and rewards
@@ -212,8 +212,8 @@ def run_worker(rank, world_size):
     This is the entry point for all processes. The rank 0 is the agent. All
     other ranks are observers.
     """
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '29500'
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "29500"
     if rank == 0:
         # rank0 is the agent
         rpc.init_rpc(AGENT_NAME, rank=rank, world_size=world_size)
@@ -225,11 +225,14 @@ def run_worker(rank, world_size):
             last_reward = agent.finish_episode()
 
             if i_episode % args.log_interval == 0:
-                print('Episode {}\tLast reward: {:.2f}\tAverage reward: {:.2f}'.format(
-                      i_episode, last_reward, agent.running_reward))
+                print(
+                    "Episode {}\tLast reward: {:.2f}\tAverage reward: {:.2f}".format(
+                        i_episode, last_reward, agent.running_reward
+                    )
+                )
 
             if agent.running_reward > agent.reward_threshold:
-                print("Solved! Running reward is now {}!".format(agent.running_reward))
+                print(f"Solved! Running reward is now {agent.running_reward}!")
                 break
     else:
         # other ranks are the observer
@@ -239,12 +242,8 @@ def run_worker(rank, world_size):
 
 
 def main():
-    mp.spawn(
-        run_worker,
-        args=(args.world_size, ),
-        nprocs=args.world_size,
-        join=True
-    )
+    mp.spawn(run_worker, args=(args.world_size,), nprocs=args.world_size, join=True)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

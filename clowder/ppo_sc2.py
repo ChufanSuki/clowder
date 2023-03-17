@@ -3,26 +3,23 @@ import os
 import random
 import time
 from distutils.util import strtobool
+
 import gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
+from absl import flags
+from gym.spaces import MultiDiscrete
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env.base_vec_env import (
+    VecEnv,
+    VecEnvStepReturn,
+    VecEnvWrapper,
+)
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
 
-
-import gym_pysc2
-from gym.wrappers import TimeLimit, Monitor
-import sys
-from absl import flags
-
-
-from gym.spaces import Discrete, Box, MultiBinary, MultiDiscrete, Space
-
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
 def parse_args():
     # fmt: off
@@ -88,6 +85,7 @@ def parse_args():
     # fmt: on
     return args
 
+
 class VecPyTorch(VecEnvWrapper):
     def __init__(self, venv: VecEnv, device):
         self.device = device
@@ -102,8 +100,9 @@ class VecPyTorch(VecEnvWrapper):
 
     def step_wait(self) -> VecEnvStepReturn:
         obs, reward, done, info = self.venv.step_wait()
-        #TODO: unsqueeze?
+        # TODO: unsqueeze?
         return obs, reward, done, info
+
 
 def make_env(env_id, seed, idx, capture_video, run_name):
     def thunk():
@@ -119,23 +118,25 @@ def make_env(env_id, seed, idx, capture_video, run_name):
 
     return thunk
 
+
 # ALGO LOGIC: initialize agent here:
 class CategoricalMasked(Categorical):
     def __init__(self, probs=None, logits=None, validate_args=None, masks=[]):
         self.masks = masks
         if len(self.masks) == 0:
-            super(CategoricalMasked, self).__init__(probs, logits, validate_args)
+            super().__init__(probs, logits, validate_args)
         else:
             self.masks = masks.type(torch.BoolTensor).to(device)
-            logits = torch.where(self.masks, logits, torch.tensor(-1e+8).to(device))
-            super(CategoricalMasked, self).__init__(probs, logits, validate_args)
-    
+            logits = torch.where(self.masks, logits, torch.tensor(-1e8).to(device))
+            super().__init__(probs, logits, validate_args)
+
     def entropy(self):
         if len(self.masks) == 0:
-            return super(CategoricalMasked, self).entropy()
+            return super().entropy()
         p_log_p = self.logits * self.probs
-        p_log_p = torch.where(self.masks, p_log_p, torch.tensor(0.).to(device))
+        p_log_p = torch.where(self.masks, p_log_p, torch.tensor(0.0).to(device))
         return -p_log_p.sum(-1)
+
 
 class Scale(nn.Module):
     def __init__(self, scale):
@@ -145,38 +146,43 @@ class Scale(nn.Module):
     def forward(self, x):
         return x * self.scale
 
+
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.orthogonal_(layer.weight, std)
     torch.nn.init.constant_(layer.bias, bias_const)
     return layer
 
+
 # PySC2 logic:
 class Agent(nn.Module):
     def __init__(self, frames=4):
-        super(Agent, self).__init__()
+        super().__init__()
         self.screen_network = nn.Sequential(
-            Scale(1/255),
+            Scale(1 / 255),
             layer_init(nn.Conv2d(5, 16, kernel_size=3, stride=2)),
             nn.ReLU(),
             layer_init(nn.Conv2d(16, 32, kernel_size=2)),
             nn.ReLU(),
             nn.Flatten(),
-            layer_init(nn.Linear(32*6*6, 128))) # 32*6*6
+            layer_init(nn.Linear(32 * 6 * 6, 128)),
+        )  # 32*6*6
         self.minimap_network = nn.Sequential(
-            Scale(1/255),
+            Scale(1 / 255),
             layer_init(nn.Conv2d(4, 16, kernel_size=3, stride=2)),
             nn.ReLU(),
             layer_init(nn.Conv2d(16, 32, kernel_size=2)),
             nn.ReLU(),
             nn.Flatten(),
-            layer_init(nn.Linear(32*6*6, 128))) # 32*6*6
+            layer_init(nn.Linear(32 * 6 * 6, 128)),
+        )  # 32*6*6
         self.non_spatial_network = nn.Sequential(
             layer_init(nn.Linear(34, 128)),
             nn.Tanh(),
-            nn.Flatten(),) # 128
-        
-        self.actor = layer_init(nn.Linear(128*3, envs.action_space.nvec.sum()), std=0.01)
-        self.critic = layer_init(nn.Linear(128*3, 1), std=1)
+            nn.Flatten(),
+        )  # 128
+
+        self.actor = layer_init(nn.Linear(128 * 3, envs.action_space.nvec.sum()), std=0.01)
+        self.critic = layer_init(nn.Linear(128 * 3, 1), std=1)
 
     def preprocess_pysc2(self, x):
         split_obs = [torch.split(item, feature_flatten_shapes) for item in x]
@@ -193,22 +199,27 @@ class Agent(nn.Module):
 
     def forward(self, x):
         screens, minimaps, non_spatials = self.preprocess_pysc2(x)
-        return torch.cat([
-            self.screen_network(screens),
-            self.minimap_network(minimaps),
-            self.non_spatial_network(non_spatials),
-        ], dim=1)
+        return torch.cat(
+            [
+                self.screen_network(screens),
+                self.minimap_network(minimaps),
+                self.non_spatial_network(non_spatials),
+            ],
+            dim=1,
+        )
 
     def get_action(self, x, action=None, invalid_action_masks=None):
         logits = self.actor(self.forward(x))
         split_logits = torch.split(logits, envs.action_space.nvec.tolist(), dim=1)
-        
+
         if invalid_action_masks is not None:
             split_invalid_action_masks = torch.split(invalid_action_masks, envs.action_space.nvec.tolist(), dim=1)
-            multi_categoricals = [CategoricalMasked(logits=logits, masks=iam) for (logits, iam) in zip(split_logits, split_invalid_action_masks)]
+            multi_categoricals = [
+                CategoricalMasked(logits=logits, masks=iam) for (logits, iam) in zip(split_logits, split_invalid_action_masks)
+            ]
         else:
             multi_categoricals = [Categorical(logits=logits) for logits in split_logits]
-        
+
         if action is None:
             action = torch.stack([categorical.sample() for categorical in multi_categoricals])
         logprob = torch.stack([categorical.log_prob(a) for a, categorical in zip(action, multi_categoricals)])
@@ -218,16 +229,18 @@ class Agent(nn.Module):
     def get_value(self, x):
         return self.critic(self.forward(x))
 
+
 if __name__ == "__main__":
     # TRY NOT TO MODIFY: setup the environment
     writer = SummaryWriter(f"runs/{experiment_name}")
-    writer.add_text('hyperparameters', "|param|value|\n|-|-|\n%s" % (
-        '\n'.join([f"|{key}|{value}|" for key, value in vars(args).items()])))
+    writer.add_text(
+        "hyperparameters", "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
+    )
     args = parse_args()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
     if args.track:
         import wandb
-        
+
         wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
@@ -248,17 +261,18 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = args.torch_deterministic
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    
+
     # env setup
     envs = VecPyTorch(
-        DummyVecEnv([make_env(args.env_id, args.seed + i, i, args.capture_video, run_name) for i in range(args.num_envs)]), device
+        DummyVecEnv([make_env(args.env_id, args.seed + i, i, args.capture_video, run_name) for i in range(args.num_envs)]),
+        device,
     )
     feature_flatten_shapes = envs.get_attr("feature_flatten_shapes")[0]
     feature_original_shapes = envs.get_attr("feature_original_shapes")[0]
     assert isinstance(envs.action_space, MultiDiscrete), "only MultiDiscrete action space is supported"
-    
+
     agent = Agent().to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     if args.anneal_lr:
@@ -280,12 +294,12 @@ global_step = 0
 next_obs = envs.reset()
 next_done = torch.zeros(args.num_envs).to(device)
 num_updates = args.total_timesteps // args.batch_size
-for update in range(1, num_updates+1):
+for update in range(1, num_updates + 1):
     # Annealing the rate if instructed to do so.
     if args.anneal_lr:
         frac = 1.0 - (update - 1.0) / num_updates
         lrnow = lr(frac)
-        optimizer.param_groups[0]['lr'] = lrnow
+        optimizer.param_groups[0]["lr"] = lrnow
 
     # TRY NOT TO MODIFY: prepare the execution of the game.
     for step in range(0, args.num_steps):
@@ -299,7 +313,7 @@ for update in range(1, num_updates+1):
         with torch.no_grad():
             values[step] = agent.get_value(obs[step]).flatten()
             action, logproba, _ = agent.get_action(obs[step], invalid_action_masks=invalid_action_masks[step])
-        
+
         actions[step] = action.T
         logprobs[step] = logproba
 
@@ -308,9 +322,9 @@ for update in range(1, num_updates+1):
         rewards[step], next_done = rs.view(-1), torch.Tensor(ds).to(device)
 
         for info in infos:
-            if 'episode' in info.keys():
+            if "episode" in info.keys():
                 print(f"global_step={global_step}, episode_reward={info['episode']['r']}")
-                writer.add_scalar("charts/episode_reward", info['episode']['r'], global_step)
+                writer.add_scalar("charts/episode_reward", info["episode"]["r"], global_step)
                 break
 
     # bootstrap reward if not done. reached the batch limit
@@ -324,8 +338,8 @@ for update in range(1, num_updates+1):
                     nextnonterminal = 1.0 - next_done
                     nextvalues = last_value
                 else:
-                    nextnonterminal = 1.0 - dones[t+1]
-                    nextvalues = values[t+1]
+                    nextnonterminal = 1.0 - dones[t + 1]
+                    nextvalues = values[t + 1]
                 delta = rewards[t] + args.gamma * nextvalues * nextnonterminal - values[t]
                 advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * nextnonterminal * lastgaelam
             returns = advantages + values
@@ -336,23 +350,25 @@ for update in range(1, num_updates+1):
                     nextnonterminal = 1.0 - next_done
                     next_return = last_value
                 else:
-                    nextnonterminal = 1.0 - dones[t+1]
-                    next_return = returns[t+1]
+                    nextnonterminal = 1.0 - dones[t + 1]
+                    next_return = returns[t + 1]
                 returns[t] = rewards[t] + args.gamma * nextnonterminal * next_return
             advantages = returns - values
 
     # flatten the batch
-    b_obs = obs.reshape((-1,)+envs.observation_space.shape)
+    b_obs = obs.reshape((-1,) + envs.observation_space.shape)
     b_logprobs = logprobs.reshape(-1)
-    b_actions = actions.reshape((-1,)+envs.action_space.shape)
+    b_actions = actions.reshape((-1,) + envs.action_space.shape)
     b_advantages = advantages.reshape(-1)
     b_returns = returns.reshape(-1)
     b_values = values.reshape(-1)
     b_invalid_action_masks = invalid_action_masks.reshape((-1, invalid_action_masks.shape[-1]))
 
-    # Optimizaing the policy and value network
+    # Optimizing the policy and value network
     target_agent = Agent().to(device)
-    inds = np.arange(args.batch_size,)
+    inds = np.arange(
+        args.batch_size,
+    )
     for i_epoch_pi in range(args.update_epochs):
         np.random.shuffle(inds)
         target_agent.load_state_dict(agent.state_dict())
@@ -364,9 +380,8 @@ for update in range(1, num_updates+1):
                 mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
             _, newlogproba, entropy = agent.get_action(
-                b_obs[minibatch_ind],
-                b_actions.long()[minibatch_ind].T,
-                b_invalid_action_masks[minibatch_ind])
+                b_obs[minibatch_ind], b_actions.long()[minibatch_ind].T, b_invalid_action_masks[minibatch_ind]
+            )
             ratio = (newlogproba - b_logprobs[minibatch_ind]).exp()
 
             # Stats
@@ -374,43 +389,45 @@ for update in range(1, num_updates+1):
 
             # Policy loss
             pg_loss1 = -mb_advantages * ratio
-            pg_loss2 = -mb_advantages * torch.clamp(ratio, 1-args.clip_coef, 1+args.clip_coef)
+            pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - args.clip_coef, 1 + args.clip_coef)
             pg_loss = torch.max(pg_loss1, pg_loss2).mean()
             entropy_loss = entropy.mean()
 
             # Value loss
             new_values = agent.get_value(b_obs[minibatch_ind]).view(-1)
             if args.clip_vloss:
-                v_loss_unclipped = ((new_values - b_returns[minibatch_ind]) ** 2)
-                v_clipped = b_values[minibatch_ind] + torch.clamp(new_values - b_values[minibatch_ind], -args.clip_coef, args.clip_coef)
-                v_loss_clipped = (v_clipped - b_returns[minibatch_ind])**2
+                v_loss_unclipped = (new_values - b_returns[minibatch_ind]) ** 2
+                v_clipped = b_values[minibatch_ind] + torch.clamp(
+                    new_values - b_values[minibatch_ind], -args.clip_coef, args.clip_coef
+                )
+                v_loss_clipped = (v_clipped - b_returns[minibatch_ind]) ** 2
                 v_loss_max = torch.max(v_loss_unclipped, v_loss_clipped)
                 v_loss = 0.5 * v_loss_max.mean()
             else:
-                v_loss = 0.5 *((new_values - b_returns[minibatch_ind]) ** 2)
+                v_loss = 0.5 * ((new_values - b_returns[minibatch_ind]) ** 2)
 
             loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef
-            
-            
+
             optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
             optimizer.step()
-            
 
         if args.kle_stop:
             if approx_kl > args.target_kl:
                 break
         if args.kle_rollback:
-            if (b_logprobs[minibatch_ind] - agent.get_action(
-                    b_obs[minibatch_ind],
-                    b_actions.long()[minibatch_ind].T,
-                    b_invalid_action_masks[minibatch_ind])[1]).mean() > args.target_kl:
+            if (
+                b_logprobs[minibatch_ind]
+                - agent.get_action(
+                    b_obs[minibatch_ind], b_actions.long()[minibatch_ind].T, b_invalid_action_masks[minibatch_ind]
+                )[1]
+            ).mean() > args.target_kl:
                 agent.load_state_dict(target_agent.state_dict())
                 break
 
     # TRY NOT TO MODIFY: record rewards for plotting purposes
-    writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]['lr'], global_step)
+    writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
     writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
     writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
     writer.add_scalar("losses/entropy", entropy.mean().item(), global_step)
