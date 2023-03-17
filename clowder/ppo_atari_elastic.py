@@ -7,9 +7,11 @@ from distutils.util import strtobool
 import gym
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.categorical import Categorical
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 
 from stable_baselines3.common.atari_wrappers import (  # isort:skip
@@ -34,7 +36,7 @@ def parse_args():
         help="if toggled, cuda will be enabled by default")
     parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="if toggled, this experiment will be tracked with Weights and Biases")
-    parser.add_argument("--wandb-project-name", type=str, default="clowder",
+    parser.add_argument("--wandb-project-name", type=str, default="cleanRL",
         help="the wandb's project name")
     parser.add_argument("--wandb-entity", type=str, default=None,
         help="the entity (team) of wandb's project")
@@ -135,7 +137,7 @@ class Agent(nn.Module):
     def get_value(self, x):
         return self.critic(self.network(x / 255.0))
 
-    def get_action_and_value(self, x, action=None):
+    def forward(self, x, action=None):
         hidden = self.network(x / 255.0)
         logits = self.actor(hidden)
         probs = Categorical(logits=logits)
@@ -144,28 +146,37 @@ class Agent(nn.Module):
         return action, probs.log_prob(action), probs.entropy(), self.critic(hidden)
 
 
-if __name__ == "__main__":
+def train(rank: int, size: int):
     args = parse_args()
+    args.num_envs = int(args.num_envs / size)
+    args.batch_size = int(args.num_envs * args.num_steps)
+    args.minibatch_size = int(args.batch_size // args.num_minibatches)
+    dist.init_process_group("gloo", rank=rank, world_size=size)
+    print(f"================================")
+    print(f"args.num_envs: {args.num_envs}, args.batch_size: {args.batch_size}, args.minibatch_size: {args.minibatch_size}")
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-    if args.track:
-        import wandb
+    writer = None
+    if rank == 0:
+        if args.track:
+            import wandb
 
-        wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            sync_tensorboard=True,
-            config=vars(args),
-            name=run_name,
-            monitor_gym=True,
-            save_code=True,
+            wandb.init(
+                project=args.wandb_project_name,
+                entity=args.wandb_entity,
+                sync_tensorboard=True,
+                config=vars(args),
+                name=run_name,
+                monitor_gym=True,
+                save_code=True,
+            )
+        writer = SummaryWriter(f"runs/{run_name}")
+        writer.add_text(
+            "hyperparameters",
+            "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
         )
-    writer = SummaryWriter(f"runs/{run_name}")
-    writer.add_text(
-        "hyperparameters",
-        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
-    )
 
     # TRY NOT TO MODIFY: seeding
+    args.seed += rank
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -180,8 +191,8 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
 
     agent = Agent(envs).to(device)
+    agent = DDP(agent, device_ids=[0], output_device=0)  # device_ids=[rank]
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
-
     # ALGO Logic: Storage setup
     obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
     actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape).to(device)
@@ -195,7 +206,7 @@ if __name__ == "__main__":
     start_time = time.time()
     next_obs = torch.Tensor(envs.reset()).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
-    num_updates = args.total_timesteps // args.batch_size
+    num_updates = args.total_timesteps // (args.batch_size * size)
 
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
@@ -205,13 +216,13 @@ if __name__ == "__main__":
             optimizer.param_groups[0]["lr"] = lrnow
 
         for step in range(0, args.num_steps):
-            global_step += 1 * args.num_envs
+            global_step += 1 * args.num_envs * size
             obs[step] = next_obs
             dones[step] = next_done
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                action, logprob, _, value = agent.get_action_and_value(next_obs)
+                action, logprob, _, value = agent.forward(next_obs)
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
@@ -223,14 +234,19 @@ if __name__ == "__main__":
 
             for item in info:
                 if "episode" in item.keys():
-                    print(f"global_step={global_step}, episodic_return={item['episode']['r']}")
-                    writer.add_scalar("charts/episodic_return", item["episode"]["r"], global_step)
-                    writer.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
-                    break
+                    if rank == 0:
+                        print(f"global_step={global_step}, episodic_return={item['episode']['r']}")
+                        writer.add_scalar("charts/episodic_return", item["episode"]["r"], global_step)
+                        writer.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
+                        break
+
+        print(
+            f"rank: {rank}, action.sum(): {action.sum()}, update: {update}, agent.actor.weight.sum(): {agent.module.actor.weight.sum()}"
+        )
 
         # bootstrap value if not done
         with torch.no_grad():
-            next_value = agent.get_value(next_obs).reshape(1, -1)
+            next_value = agent.module.get_value(next_obs).reshape(1, -1)
             if args.gae:
                 advantages = torch.zeros_like(rewards).to(device)
                 lastgaelam = 0
@@ -273,7 +289,7 @@ if __name__ == "__main__":
                 end = start + args.minibatch_size
                 mb_inds = b_inds[start:end]
 
-                _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions.long()[mb_inds])
+                _, newlogprob, entropy, newvalue = agent.forward(b_obs[mb_inds], b_actions.long()[mb_inds])
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
 
@@ -324,16 +340,30 @@ if __name__ == "__main__":
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
-        writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
-        writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
-        writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
-        writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
-        writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
-        writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
-        writer.add_scalar("losses/explained_variance", explained_var, global_step)
-        print("SPS:", int(global_step / (time.time() - start_time)))
-        writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+        if rank == 0:
+            writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
+            writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
+            writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
+            writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
+            writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
+            writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
+            writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
+            writer.add_scalar("losses/explained_variance", explained_var, global_step)
+            print("SPS:", int(global_step / (time.time() - start_time)))
+            writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
     envs.close()
-    writer.close()
+    if rank == 0:
+        writer.close()
+        if args.track:
+            wandb.finish()
+
+
+if __name__ == "__main__":
+    # taken from https://pytorch.org/docs/stable/elastic/run.html
+    local_rank = int(os.environ["LOCAL_RANK"])
+    world_size = int(os.environ["WORLD_SIZE"])
+    print(world_size, local_rank)
+    train(local_rank, world_size)
+    # WORLD_SIZE
+    # torchrun --standalone --nnodes=1 --nproc_per_node=2 ppo_atari_elastic.py
