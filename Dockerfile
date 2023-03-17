@@ -1,24 +1,22 @@
-FROM nvidia/cuda:11.4.2-runtime-ubuntu20.04
+FROM nvidia/cuda:11.8.0-runtime-ubuntu20.04
 
 # install ubuntu dependencies
 ENV DEBIAN_FRONTEND=noninteractive 
 RUN apt-get update -y && \
-    apt-get remove python3 && \
+    apt install -y software-properties-common && \
+    apt-get update -y && \
     apt-get upgrade -y && \
-    apt-get -y install libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev \
-    xvfb ffmpeg git build-essential python-opengl wget checkinstall && \
-    cd /usr/src && \
-    wget https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz && \
-    tar xzf Python-3.10.4.tgz && \
-    cd Python-3.10.4 && \
-    ./configure --enable-optimizations --prefix=/usr && \
-    make install
-RUN ln -s /usr/bin/python3 /usr/bin/python
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update -y &&  \
+    apt-get -y install python3.9 xvfb ffmpeg git build-essential python-opengl wget checkinstall python3-pip
+RUN ln -s /usr/bin/python3.9 /usr/bin/python
+RUN python --version
 
 # install python dependencies
 RUN pip install poetry --upgrade
 COPY pyproject.toml pyproject.toml
 COPY poetry.lock poetry.lock
+RUN poetry env use 3.9
 RUN poetry install
 RUN poetry install --with atari
 RUN poetry install --with pybullet
