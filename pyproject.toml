@@ -45,9 +45,15 @@ awscli = {version = "^1.25.71", optional = true}
 shimmy = {version = "^0.1.0", optional = true}
 dm-control = {version = "^1.0.8", optional = true}
 xmanager = "^0.3.0"
+dm-env = "^1.6"
+treevalue = "^1.4.10"
+dm-tree = "^0.1.8"
+h5py = "^3.8.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^2.20.0"
+yapf = "^0.33.0"
+pytest = "^7.3.1"
 
 [tool.poetry.group.atari]
 optional = true
