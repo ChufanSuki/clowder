@@ -25,7 +25,7 @@ jobs:
           poetry-version: ${{ matrix.poetry-version }}
       - name: Install dependencies
         run: |
-          poetry install --extras pytest dev
+          poetry install --with="pytest, dev, atari"
       - name: Test with pytest
         # ignore test/throughput which only profiles the code
         run: |

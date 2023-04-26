@@ -25,7 +25,7 @@ SKIP_ATARI_MESSAGE = ''
 
 try:
     # pylint: disable=g-import-not-at-top
-    from clowder.gym_wrapper import GymWrapper, _convert_to_spec
+    from clowder.gym_wrapper import GymWrapper, _convert_to_spec, GymAtariAdapter
     import gymnasium as gym
     # pylint: enable=g-import-not-at-top
 except ModuleNotFoundError:
@@ -105,30 +105,30 @@ class TestGymWrapper:
         pytest.raises(ValueError, spec.validate, [1, 3])
 
 
-# @unittest.skipIf(SKIP_ATARI_TESTS, SKIP_ATARI_MESSAGE)
-# class AtariGymWrapperTest(absltest.TestCase):
+@pytest.mark.skipif(SKIP_ATARI_TESTS, reason=SKIP_ATARI_MESSAGE)
+class TestAtariGymWrapper:
 
-#     def test_pong(self):
-#         env = gym.make('PongNoFrameskip-v4', full_action_space=True)
-#         env = gym_wrapper.GymAtariAdapter(env)
+    def test_pong(self):
+        env = gym.make('PongNoFrameskip-v4', full_action_space=True)
+        env = GymAtariAdapter(env)
 
-#         # Test converted observation spec. This should expose (RGB, LIVES).
-#         observation_spec = env.observation_spec()
-#         self.assertEqual(type(observation_spec[0]), specs.BoundedArray)
-#         self.assertEqual(type(observation_spec[1]), specs.Array)
+        # Test converted observation spec. This should expose (RGB, LIVES).
+        observation_spec = env.observation_spec()
+        assert isinstance(observation_spec[0], specs.BoundedArray)
+        assert isinstance(observation_spec[1], specs.Array)
 
-#         # Test converted action spec.
-#         action_spec: specs.DiscreteArray = env.action_spec()[0]
-#         self.assertEqual(type(action_spec), specs.DiscreteArray)
-#         self.assertEqual(action_spec.shape, ())
-#         self.assertEqual(action_spec.minimum, 0)
-#         self.assertEqual(action_spec.maximum, 17)
-#         self.assertEqual(action_spec.num_values, 18)
-#         self.assertEqual(action_spec.dtype, np.dtype('int64'))
+        # Test converted action spec.
+        action_spec: specs.DiscreteArray = env.action_spec()[0]
+        assert isinstance(action_spec, specs.DiscreteArray)
+        assert action_spec.shape == ()
+        assert action_spec.minimum == 0
+        assert action_spec.maximum == 17
+        assert action_spec.num_values == 18
+        assert action_spec.dtype == np.dtype('int64')
 
-#         # Test step.
-#         timestep = env.reset()
-#         self.assertTrue(timestep.first())
-#         _ = env.step([np.array(0)])
-#         env.close()
+        # Test step.
+        timestep = env.reset()
+        assert timestep.first()
+        _ = env.step([np.array(0)])
+        env.close()
 

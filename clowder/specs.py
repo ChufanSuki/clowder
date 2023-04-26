@@ -1,10 +1,16 @@
 from dm_env import specs
 import dm_env
-from typing import Any, Union, Mapping, Sequence
+from typing import Any, Union, Mapping, Sequence, Optional, Union
+import numpy as np
+from torch import Tensor
 
 from dataclasses import dataclass
 
 NestedSpec = Union[specs.Array, Mapping[Any, 'NestedSpec'], Sequence['NestedSpec']]
+NestedArray = Union[np.ndarray, np.number, Mapping[Any, "NestedArray"], Sequence['NestedArray']]
+NestedTensor = Union[Tensor, Mapping[Any, "NestedTensor"], Sequence['NestedTensor']]
+
+Nest = Union[NestedArray, NestedSpec, NestedTensor]
 
 @dataclass
 class EnvironmentSpec:

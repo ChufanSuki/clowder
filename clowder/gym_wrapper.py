@@ -22,7 +22,7 @@ from gymnasium import spaces
 import numpy as np
 import tree
 
-from clowder.specs import NestedSpec, EnvironmentSpec, make_environment_spec
+from clowder.specs import NestedSpec, NestedArray, EnvironmentSpec, make_environment_spec
 
 class GymWrapper(dm_env.Environment):
     """Environment wrapper for OpenAI Gym environments."""
@@ -39,8 +39,7 @@ class GymWrapper(dm_env.Environment):
         # Convert action and observation specs.
         obs_space = self._environment.observation_space
         act_space = self._environment.action_space
-        self._observation_spec = _convert_to_spec(obs_space,
-                                                  name='observation')
+        self._observation_spec = _convert_to_spec(obs_space, name='observation')
         self._action_spec = _convert_to_spec(act_space, name='action')
 
     def reset(self) -> dm_env.TimeStep:
@@ -51,13 +50,13 @@ class GymWrapper(dm_env.Environment):
         self._last_info = None
         return dm_env.restart(observation)
 
-    def step(self, action: NestedSpec) -> dm_env.TimeStep:
+    def step(self, action: NestedArray) -> dm_env.TimeStep:
         """Steps the environment."""
         if self._reset_next_step:
             return self.reset()
 
-        observation, reward, done, info = self._environment.step(action)
-        self._reset_next_step = done
+        observation, reward, terminated, truncated, info = self._environment.step(action)
+        self._reset_next_step = terminated or truncated
         self._last_info = info
 
         # Convert the type of the reward based on the spec, respecting the scalar or
@@ -69,10 +68,9 @@ class GymWrapper(dm_env.Environment):
             reward,
             self.reward_spec())
 
-        if done:
-            truncated = info.get('TimeLimit.truncated', False)
-            if truncated:
-                return dm_env.truncation(reward, observation)
+        if truncated:
+            return dm_env.truncation(reward, observation)
+        if terminated:
             return dm_env.termination(reward, observation)
         return dm_env.transition(reward, observation)
 
