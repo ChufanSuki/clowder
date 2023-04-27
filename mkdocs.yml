@@ -1,15 +1,58 @@
 site_name: Clowder Documentation
+site_description: 'Clowder is a scalable reinforcement learning framework.'
+site_author: 'Chufan Chen'
 theme:
     name: material
+    custom_dir: 'docs/theme-override/'
+
+repo_name: 'catwork-llc/clowder'
+repo_url: 'https://github.com/Catwork-LLC/clowder'
+
+extra:
+    pagetime: 'on'
+
 nav:
     - Home: index.md
-    - About: environment.md
+    - Environment: environment.md
+    - RPC: rpc.md
 
 markdown_extensions:
-    - pymdownx.arithmatex:
-        generic: true
+    - admonition
+    - pymdownx.highlight:
+        anchor_linenums: true
+    - pymdownx.superfences 
+    - footnotes
+    - def_list
+    - meta
+    - toc:
+        permalink: true
+    - pymdownx.arithmatex
+    - pymdownx.betterem:
+        smart_enable: all
+    - pymdownx.caret
+    - pymdownx.critic
+    - pymdownx.details
+    - pymdownx.emoji:
+        emoji_generator: !!python/name:pymdownx.emoji.to_svg
+    - pymdownx.inlinehilite
+    - pymdownx.magiclink
+    - pymdownx.mark
+    - pymdownx.smartsymbols
+    - pymdownx.tasklist:
+        custom_checkbox: true
+    - pymdownx.tilde
 
 extra_javascript:
     - javascripts/mathjax.js
     - https://polyfill.io/v3/polyfill.min.js?features=es6
     - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+plugins:
+    - search
+    - git-revision-date-localized:
+        fallback_to_build_date: true
+        locale: en
+    - git-authors:
+        show_contribution: true
+        show_line_count: true
+        fallback_to_empty: false
