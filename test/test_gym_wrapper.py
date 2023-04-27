@@ -33,7 +33,6 @@ except ModuleNotFoundError:
 
 try:
     import ale_py  # pylint: disable=g-import-not-at-top
-    ale_py.get_game_path('pong')
 except ModuleNotFoundError as e:
     SKIP_ATARI_TESTS = True
     SKIP_ATARI_MESSAGE = str(e)
@@ -109,7 +108,7 @@ class TestGymWrapper:
 class TestAtariGymWrapper:
 
     def test_pong(self):
-        env = gym.make('PongNoFrameskip-v4', full_action_space=True)
+        env = gym.make('ALE/Pong-v5', full_action_space=True)
         env = GymAtariAdapter(env)
 
         # Test converted observation spec. This should expose (RGB, LIVES).
