@@ -56,6 +56,7 @@ pytest = "^7.3.1"
 [tool.poetry.group.atari]
 optional = true
 [tool.poetry.group.atari.dependencies]
+shimmy = "^0.2.1"
 ale-py = "0.7.4"
 AutoROM = {extras = ["accept-rom-license"], version = "^0.4.2"}
 opencv-python = "^4.6.0.66"
@@ -130,7 +131,7 @@ awscli = "^1.25.71"
 [tool.poetry.group.dm_control]
 optional = true
 [tool.poetry.group.dm_control.dependencies]
-shimmy = "^0.1.0"
+shimmy = "^0.2.1"
 dm-control = "^1.0.8"
 mujoco = "^2.2"
 

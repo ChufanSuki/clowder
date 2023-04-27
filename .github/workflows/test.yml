@@ -26,6 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --with="pytest, dev, atari"
+          poetry run pip install git+https://github.com/facebookresearch/moolib
       - name: Test with pytest
         # ignore test/throughput which only profiles the code
         run: |
