@@ -92,6 +92,8 @@ optional = true
 [tool.poetry.group.docs.dependencies]
 mkdocs-material = "^8.4.3"
 markdown-include = "^0.7.0"
+mkdocs-git-revision-date-localized-plugin = "1.2.0"
+mkdocs-git-authors-plugin = "0.7.0"
 
 [tool.poetry.group.jax]
 optional = true

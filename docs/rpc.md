@@ -29,3 +29,5 @@ print(future.result())
 
 ## Remotable
 
+`RemotableMeta` is a metaclass that automatically mark methods in a class as remote functions if they have the `__remote__` attribute set to True, and collects all remote method names into a list in the `__remote_methods__` attribute of the class. It creates a set called `remote_methods` and populates it with any methods defined in the `__remote_methods__` attribute in the class and any of its base classes. Any method has the `__remote__` attribute set to `True` also be added to the set.
+

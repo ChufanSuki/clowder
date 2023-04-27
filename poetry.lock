@@ -295,23 +295,35 @@ tests = ["ale_py", "multi_agent_ale_py"]
 
 [[package]]
 name = "awscli"
-version = "1.27.120"
+version = "1.27.121"
 description = "Universal Command Line Environment for AWS."
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "awscli-1.27.120-py3-none-any.whl", hash = "sha256:7d9df956bcead5d8285f17606ddc6f940a9b2ed4b1712bce72aca6fa690ddf75"},
-    {file = "awscli-1.27.120.tar.gz", hash = "sha256:9d91193e85ab56f2f21b06da84223007d5dc6e2b81f907292473419e377e2200"},
+    {file = "awscli-1.27.121-py3-none-any.whl", hash = "sha256:da5b095e0840b1f66970e40cbfaf95570699031bc0f8c9f2631c02724a4f8436"},
+    {file = "awscli-1.27.121.tar.gz", hash = "sha256:f2c7c759095167874b9084a9a1b921801d57d16baba1357dd208c9533606b899"},
 ]
 
 [package.dependencies]
-botocore = "1.29.120"
+botocore = "1.29.121"
 colorama = ">=0.2.5,<0.4.5"
 docutils = ">=0.10,<0.17"
 PyYAML = ">=3.10,<5.5"
 rsa = ">=3.1.2,<4.8"
 s3transfer = ">=0.6.0,<0.7.0"
+
+[[package]]
+name = "babel"
+version = "2.12.1"
+description = "Internationalization utilities"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "Babel-2.12.1-py3-none-any.whl", hash = "sha256:b4246fb7677d3b98f501a39d43396d3cafdc8eadb045f4a31be01863f655c610"},
+    {file = "Babel-2.12.1.tar.gz", hash = "sha256:cc2d99999cd01d44420ae725a21c9e3711b3aadc7976d6147f622d8581963455"},
+]
 
 [[package]]
 name = "bitmath"
@@ -326,18 +338,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.26.120"
+version = "1.26.121"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.26.120-py3-none-any.whl", hash = "sha256:0f8eeeb259befd6e8c464a05c69b66ba7b1e0c978300b446fc0823020acaf380"},
-    {file = "boto3-1.26.120.tar.gz", hash = "sha256:17b93fdff147577ef506adbcada0ac81dd4be3b8d8b3c7831f9ee9f7ac9615e5"},
+    {file = "boto3-1.26.121-py3-none-any.whl", hash = "sha256:827342a6b94b18daed937b0743f43958d1d3b9d5423ec995c19ae74b82cd54bc"},
+    {file = "boto3-1.26.121.tar.gz", hash = "sha256:f87d694c351eba1dfd19b5bef5892a1047e7adb09c57c2c00049de209a8ab55d"},
 ]
 
 [package.dependencies]
-botocore = ">=1.29.120,<1.30.0"
+botocore = ">=1.29.121,<1.30.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -346,14 +358,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.120"
+version = "1.29.121"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.29.120-py3-none-any.whl", hash = "sha256:0010b2a654973ab7f8697a9bb69cc0bd92450a7d77dd65c858a717edfe2e40f6"},
-    {file = "botocore-1.29.120.tar.gz", hash = "sha256:82de714c06fcefbcf2f3854b81c51bf0c529ec902c6e927156ff47988aaeeb7a"},
+    {file = "botocore-1.29.121-py3-none-any.whl", hash = "sha256:4030b2cde8c8c7b58c657c27e5e4ec0edb7a0cab84e31b0fe752dddee2735d68"},
+    {file = "botocore-1.29.121.tar.gz", hash = "sha256:955c1dd244b6286d9e17dc525d1459a2a74a1c4e519f35006c72f184fbce0760"},
 ]
 
 [package.dependencies]
@@ -3052,6 +3064,39 @@ i18n = ["babel (>=2.9.0)"]
 min-versions = ["babel (==2.9.0)", "click (==7.0)", "colorama (==0.4)", "ghp-import (==1.0)", "importlib-metadata (==4.3)", "jinja2 (==2.11.1)", "markdown (==3.2.1)", "markupsafe (==2.0.1)", "mergedeep (==1.3.4)", "packaging (==20.5)", "pyyaml (==5.1)", "pyyaml-env-tag (==0.1)", "typing-extensions (==3.10)", "watchdog (==2.0)"]
 
 [[package]]
+name = "mkdocs-git-authors-plugin"
+version = "0.7.0"
+description = "Mkdocs plugin to display git authors of a page"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "mkdocs-git-authors-plugin-0.7.0.tar.gz", hash = "sha256:087b63090ebbf6b93f20d8b8e5fbac8e8b140e2107e432ca2ac8dd1d3a1000f5"},
+    {file = "mkdocs_git_authors_plugin-0.7.0-py3-none-any.whl", hash = "sha256:cc469208f98e9db08561eac08a9d8ccd0209a60ee5bd0e3e94b6840a5abc54b6"},
+]
+
+[package.dependencies]
+mkdocs = ">=1.0"
+
+[[package]]
+name = "mkdocs-git-revision-date-localized-plugin"
+version = "1.2.0"
+description = "Mkdocs plugin that enables displaying the localized date of the last git modification of a markdown file."
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "mkdocs-git-revision-date-localized-plugin-1.2.0.tar.gz", hash = "sha256:7752edd7c4dcaa9383e9a5b6a4f729831a62d604b0c43b319331127720c6a2bf"},
+    {file = "mkdocs_git_revision_date_localized_plugin-1.2.0-py3-none-any.whl", hash = "sha256:540b9c930d8d48630c090b72ac2c3900ac2ed0799b23738a33b88e31f5198fe7"},
+]
+
+[package.dependencies]
+babel = ">=2.7.0"
+GitPython = "*"
+mkdocs = ">=1.0"
+pytz = "*"
+
+[[package]]
 name = "mkdocs-material"
 version = "8.5.11"
 description = "Documentation that simply works"
@@ -3158,25 +3203,6 @@ files = [
     {file = "monotonic-1.6-py2.py3-none-any.whl", hash = "sha256:68687e19a14f11f26d140dd5c86f3dba4bf5df58003000ed467e0e2a69bca96c"},
     {file = "monotonic-1.6.tar.gz", hash = "sha256:3a55207bcfed53ddd5c5bae174524062935efed17792e9de2ad0205ce9ad63f7"},
 ]
-
-[[package]]
-name = "moolib"
-version = "0.2.0"
-description = "A library for distributed ML training with PyTorch"
-category = "main"
-optional = false
-python-versions = "*"
-files = []
-develop = false
-
-[package.dependencies]
-torch = ">=1.6.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/facebookresearch/moolib"
-reference = "HEAD"
-resolved_reference = "06e7a3e80c9f52729b4a6159f3fb4fc78986c98e"
 
 [[package]]
 name = "moviepy"
@@ -4057,14 +4083,14 @@ tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "pa
 
 [[package]]
 name = "platformdirs"
-version = "3.3.0"
+version = "3.4.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "platformdirs-3.3.0-py3-none-any.whl", hash = "sha256:ea61fd7b85554beecbbd3e9b37fb26689b227ffae38f73353cbcc1cf8bd01878"},
-    {file = "platformdirs-3.3.0.tar.gz", hash = "sha256:64370d47dc3fca65b4879f89bdead8197e93e05d696d6d1816243ebae8595da5"},
+    {file = "platformdirs-3.4.0-py3-none-any.whl", hash = "sha256:01437886022decaf285d8972f9526397bfae2ac55480ed372ed6d9eca048870a"},
+    {file = "platformdirs-3.4.0.tar.gz", hash = "sha256:a5e1536e5ea4b1c238a1364da17ff2993d5bd28e15600c2c8224008aff6bbcad"},
 ]
 
 [package.extras]
@@ -4616,14 +4642,14 @@ pyyaml = "*"
 
 [[package]]
 name = "requests"
-version = "2.28.2"
+version = "2.29.0"
 description = "Python HTTP for Humans."
 category = "main"
 optional = false
-python-versions = ">=3.7, <4"
+python-versions = ">=3.7"
 files = [
-    {file = "requests-2.28.2-py3-none-any.whl", hash = "sha256:64299f4909223da747622c030b781c0d7811e359c37124b4bd368fb8c6518baa"},
-    {file = "requests-2.28.2.tar.gz", hash = "sha256:98b1b2782e3c6c4904938b84c0eb932721069dfdb9134313beff7c83c2df24bf"},
+    {file = "requests-2.29.0-py3-none-any.whl", hash = "sha256:e8f3c9be120d3333921d213eef078af392fba3933ab7ed2d1cba3b56f2568c3b"},
+    {file = "requests-2.29.0.tar.gz", hash = "sha256:f2e34a75f4749019bb0e3effb66683630e4ffeaf75819fb51bebef1bf5aef059"},
 ]
 
 [package.dependencies]
@@ -5872,4 +5898,4 @@ pytest = ["pytest"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.11"
-content-hash = "5f105114c08acf2ebe0ac662ad1ccd258a333041879f739f37c1a8aa239f2695"
+content-hash = "18067316354f0a2a97fb71c784572cbbe3fefeb7762fbfd12ade1039437e7236"
