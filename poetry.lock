@@ -1253,29 +1253,6 @@ all = ["sphinx (>=3.2.0)", "sphinx-toolbox (>=2.16.0)"]
 sphinx = ["sphinx (>=3.2.0)", "sphinx-toolbox (>=2.16.0)"]
 
 [[package]]
-name = "envlogger"
-version = "1.0.8"
-description = "EnvLogger: A tool for recording trajectories."
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "envlogger-1.0.8-cp37-cp37m-manylinux2014_x86_64.whl", hash = "sha256:94d8cd2a103298748eccb5a655265d7d3af769b8bb63fd0c99f227704e88090d"},
-    {file = "envlogger-1.0.8-cp38-cp38-manylinux2014_x86_64.whl", hash = "sha256:2d277753b920fde0097b4dc704375b8e3d1371b6e44528a461d630786a6e3fe6"},
-    {file = "envlogger-1.0.8-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:64f35d86a95960986086da849001ff22ec0fcbb2d94ac6e07f09c9855ce00b4c"},
-]
-
-[package.dependencies]
-absl-py = "*"
-dm-env = "*"
-numpy = "*"
-protobuf = ">=3.14"
-setuptools = "!=50.0.0"
-
-[package.extras]
-tfds = ["tensorflow", "tfds-nightly"]
-
-[[package]]
 name = "envpool"
 version = "0.6.6"
 description = "\"C++-based high-performance parallel environment execution engine (vectorized env) for general RL environments.\""
@@ -6263,4 +6240,4 @@ pytest = ["pytest"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.11"
-content-hash = "7b62d21c83408186397767aecf5df402fd225c0a8570132e7c46fd9aa2ea0d17"
+content-hash = "ea36f108b74f9f9351a03471a225b2dfe7327d30adf6ad6976056d9d4f1d897b"

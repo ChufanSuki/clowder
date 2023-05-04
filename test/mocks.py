@@ -5,20 +5,20 @@ order to test or interact with other components.
 """
 
 import threading
-from typing import List, Mapping, Optional, Sequence, Callable, Iterator
+from typing import Callable, Iterator, List, Mapping, Optional, Sequence
 
-from clowder.actor import Actor
-from clowder.leaner import Learner
-from clowder import specs
-from clowder import gym_wrapper
-from clowder.variable import VariableSource, VariableClient
 import dm_env
-from dm_env.specs import Array, BoundedArray, DiscreteArray
 import numpy as np
 import reverb
-from rlds import rlds_types
 import tensorflow as tf
 import tree
+from dm_env.specs import Array, BoundedArray, DiscreteArray
+from rlds import rlds_types
+
+from clowder import gym_wrapper, specs
+from clowder.actor import Actor
+from clowder.learner import Learner
+from clowder.variable import VariableClient, VariableSource
 
 
 class MockActor(Actor):
@@ -72,7 +72,7 @@ class MockVariableSource(VariableSource):
         return [self._variables[name] for name in names]
 
 
-class MockLearner(Learner, VariableSource):
+class MockLearner(Learner, MockVariableSource):
     """Fake Learner."""
 
     def __init__(self,
