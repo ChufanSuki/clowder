@@ -6,11 +6,15 @@ from torch import Tensor
 
 from dataclasses import dataclass
 
-NestedSpec = Union[specs.Array, Mapping[Any, 'NestedSpec'], Sequence['NestedSpec']]
-NestedArray = Union[np.ndarray, np.number, Mapping[Any, "NestedArray"], Sequence['NestedArray']]
-NestedTensor = Union[Tensor, Mapping[Any, "NestedTensor"], Sequence['NestedTensor']]
+NestedSpec = Union[specs.Array, Mapping[Any, 'NestedSpec'],
+                   Sequence['NestedSpec']]
+NestedArray = Union[np.ndarray, np.number, Mapping[Any, "NestedArray"],
+                    Sequence['NestedArray']]
+NestedTensor = Union[Tensor, Mapping[Any, "NestedTensor"],
+                     Sequence['NestedTensor']]
 
 Nest = Union[NestedArray, NestedSpec, NestedTensor]
+
 
 @dataclass
 class EnvironmentSpec:
@@ -19,12 +23,22 @@ class EnvironmentSpec:
     actions: NestedSpec
     rewards: NestedSpec
     discounts: NestedSpec
-    
+
 
 def make_environment_spec(environment: dm_env.Environment) -> EnvironmentSpec:
     """Returns an `EnvironmentSpec` describing values used by an environment."""
-    return EnvironmentSpec(
-        observations=environment.observation_spec(),
-        actions=environment.action_spec(),
-        rewards=environment.reward_spec(),
-        discounts=environment.discount_spec())
+    return EnvironmentSpec(observations=environment.observation_spec(),
+                           actions=environment.action_spec(),
+                           rewards=environment.reward_spec(),
+                           discounts=environment.discount_spec())
+
+
+@dataclass
+class Transition:
+    """Container for a transition."""
+    observation: NestedArray
+    action: NestedArray
+    reward: NestedArray
+    discount: NestedArray
+    next_observation: NestedArray
+    extras: NestedArray = ()

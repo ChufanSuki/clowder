@@ -1,2 +1,3 @@
-class ReverbReplay:
+import abc
+class ReverbReplay(abc.ABC):
     

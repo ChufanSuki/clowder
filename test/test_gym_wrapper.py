@@ -1,22 +1,10 @@
-# Copyright 2018 DeepMind Technologies Limited. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """Tests for gym_wrapper."""
 
 import pytest
 
 from dm_env import specs
 import numpy as np
+from clowder.gym_wrapper import GymWrapper, _convert_to_spec, GymAtariAdapter
 
 SKIP_GYM_TESTS = False
 SKIP_GYM_MESSAGE = 'gym not installed.'
@@ -25,7 +13,6 @@ SKIP_ATARI_MESSAGE = ''
 
 try:
     # pylint: disable=g-import-not-at-top
-    from clowder.gym_wrapper import GymWrapper, _convert_to_spec, GymAtariAdapter
     import gymnasium as gym
     # pylint: enable=g-import-not-at-top
 except ModuleNotFoundError:
