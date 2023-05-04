@@ -6,10 +6,11 @@ from typing import Any, Dict, Optional, List
 import dm_env
 import tree
 import numpy as np
-from actor import Actor
+from clowder.actor import Actor
 from dm_env import TimeStep, specs
-from specs import Nest
-from worker import Worker
+from clowder.specs import Nest
+from clowder.worker import Worker
+from clowder import signals
 
 
 def _generate_zeros_from_spec(spec: specs.Array) -> np.ndarray:
@@ -68,7 +69,7 @@ class EnvironmentLoop(Loop):
     def __init__(self,
                  actor: Actor,
                  environment: dm_env.Environment,
-                 phase: Phase,
+                 phase: Phase = Phase.NONE,
                  should_update: bool = False,
                  episode_callback: Optional[EpisodeCallback] = None):
         self._actor = actor
@@ -125,3 +126,22 @@ class EnvironmentLoop(Loop):
             'env_step_duration_sec': np.mean(env_step_durations),
         }
         return result
+
+    def run(self, num_episodes: Optional[int] = None, num_steps: Optional[int] = None,):
+        if not (num_episodes is None or num_steps is None):
+            raise ValueError('Either "num_episodes" or "num_steps" should be None.')
+
+        def should_terminate(episode_count: int, step_count: int) -> bool:
+            return ((num_episodes is not None and episode_count >= num_episodes) or
+                    (num_steps is not None and step_count >= num_steps))
+
+        episode_count: int = 0
+        step_count: int = 0
+        with signals.runtime_terminator():
+            while not should_terminate(episode_count, step_count):
+                episode_start = time.perf_counter()
+                result = self.run_episode()
+                result = {**result, **{'episode_duration': time.perf_counter() - episode_start}}
+                episode_count += 1
+                step_count += int(result['episode_length'])
+                # Log the given episode results.

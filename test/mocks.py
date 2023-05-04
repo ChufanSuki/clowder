@@ -19,6 +19,7 @@ from clowder import gym_wrapper, specs
 from clowder.actor import Actor
 from clowder.learner import Learner
 from clowder.variable import VariableClient, VariableSource
+from clowder.wrappers.observation_action_reward import ObservationActionRewardWrapper
 
 
 class MockActor(Actor):
@@ -191,7 +192,7 @@ class _BaseDiscreteEnvironment(Environment):
                          **kwargs)
 
 
-class DiscreteEnvironment(_BaseDiscreteEnvironment):
+class MockDiscreteEnvironment(_BaseDiscreteEnvironment):
     """Discrete state and action fake environment."""
 
     def __init__(self,
@@ -219,7 +220,7 @@ class DiscreteEnvironment(_BaseDiscreteEnvironment):
                          **kwargs)
 
 
-class NestedDiscreteEnvironment(_BaseDiscreteEnvironment):
+class MockNestedDiscreteEnvironment(_BaseDiscreteEnvironment):
     """Discrete action fake environment with nested discrete state."""
 
     def __init__(self,
@@ -250,7 +251,7 @@ class NestedDiscreteEnvironment(_BaseDiscreteEnvironment):
                          **kwargs)
 
 
-class ContinuousEnvironment(Environment):
+class MockContinuousEnvironment(Environment):
     """Continuous state and action fake environment."""
 
     def __init__(self,
@@ -318,7 +319,7 @@ def _normalize_array(array: Array) -> Array:
         return array
     if not (array.maximum == float('+inf')).all():
         return array
-    return specs.Array(array.shape, array.dtype, array.name)
+    return Array(array.shape, array.dtype, array.name)
 
 
 def _generate_from_spec(spec: specs.NestedSpec) -> specs.NestedArray:
@@ -426,7 +427,7 @@ def fake_atari_wrapped(episode_length: int = 10,
                               episode_length=episode_length)
 
     if oar_wrapper:
-        env = wrappers.ObservationActionRewardWrapper(env)
+        env = ObservationActionRewardWrapper(env)
     return env
 
 
