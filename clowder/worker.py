@@ -13,8 +13,8 @@ class Handle(abc.ABC):
   implemented in subclasses).
   """
 
-  def connect(self, worker: Node, label: str) -> None:
-    """Called to let this handle know about it's connecting to a node.
+  def connect(self, worker: Worker, label: str) -> None:
+    """Called to let this handle know about it's connecting to a worker.
 
     This is supposed to be called:
 
@@ -22,12 +22,12 @@ class Handle(abc.ABC):
       2. Before any address binding happens
 
     The motivation is we want to give the handle a chance to configure itself
-    for the node, before it's turned into executables and addresses are
+    for the worker, before it's turned into executables and addresses are
     finalized.
 
     Args:
-      node: The node that the handle connects to.
-      label: Label of the node.
+      worker: The worker that the handle connects to.
+      label: Label of the worker.
     """
     pass
 
@@ -124,6 +124,5 @@ class WorkerList:
     def terminate(self) -> None:
         for worker in self.workers:
             worker.terminate()
-
 
 WorkerLike = Union[Worker, WorkerList]

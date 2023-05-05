@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry lock
-          poetry install --with="pytest, dev, atari, tensorflow optuna"
+          poetry install --with="pytest, dev, atari, tensorflow, optuna"
       - name: Test with pytest
         # ignore test/throughput which only profiles the code
         run: |
