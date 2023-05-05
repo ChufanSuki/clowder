@@ -137,11 +137,17 @@ class EnvironmentLoop(Loop):
 
         episode_count: int = 0
         step_count: int = 0
-        with signals.runtime_terminator():
-            while not should_terminate(episode_count, step_count):
-                episode_start = time.perf_counter()
-                result = self.run_episode()
-                result = {**result, **{'episode_duration': time.perf_counter() - episode_start}}
-                episode_count += 1
-                step_count += int(result['episode_length'])
+        # with signals.runtime_terminator():
+        #     while not should_terminate(episode_count, step_count):
+        #         episode_start = time.perf_counter()
+        #         result = self.run_episode()
+        #         result = {**result, **{'episode_duration': time.perf_counter() - episode_start}}
+        #         episode_count += 1
+        #         step_count += int(result['episode_length'])
+        while not should_terminate(episode_count, step_count):
+            episode_start = time.perf_counter()
+            result = self.run_episode()
+            result = {**result, **{'episode_duration': time.perf_counter() - episode_start}}
+            episode_count += 1
+            step_count += int(result['episode_length'])
                 # Log the given episode results.

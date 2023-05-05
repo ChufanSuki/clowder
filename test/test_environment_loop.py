@@ -84,5 +84,5 @@ def _parameterized_setup(discount_spec: Optional[specs.NestedSpec] = None,
 
     environment = mocks.MockDiscreteEnvironment(**env_kwargs)
     actor = mocks.MockActor(specs.make_environment_spec(environment))
-    loop = environment_loop.EnvironmentLoop(actor, environment)
+    loop = environment_loop.EnvironmentLoop(actor, environment, should_update=True)
     return actor, loop
