@@ -3,8 +3,6 @@ import functools
 
 from typing import Any, Callable, List, Optional
 
-import moolib
-
 class RemotableMeta(abc.ABCMeta):
     def __new__(mcs, name, bases, attrs):
         remote_methods = set(attrs.get("__remote_methods__", []))
@@ -82,11 +80,6 @@ class Remote:
     @property
     def server_addr(self) -> str:
         return self._server_addr
-
-    @property
-    def client(self) -> Optional[moolib.Client]:
-        return self._client
-
     @property
     def connected(self) -> bool:
         return self._connected
@@ -102,10 +95,6 @@ class Remote:
     def connect(self) -> None:
         if self._connected:
             return
-        self._client = moolib.Rpc()
-        self._client.set_name(self._name)
-        self._client.set_timeout(self._timeout)
-        self._client.connect(self._server_addr)
         self._bind()
         self._connected = True
 

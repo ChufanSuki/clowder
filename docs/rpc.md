@@ -1,6 +1,6 @@
 # RPC
 
-Actors, Learners, Environments may distributed across processes and machines. We use RPC to communicate between these processes. We try to make this deep learning framework agnostic. But right now, I uses Moolib(a library for distributed ML training with PyTorch) to define and test a set of APIs. The backend may change in the future.
+Actors, Learners, Environments may distributed across processes and machines. We use RPC to communicate between these processes. We try to make this deep learning framework agnostic. 
 
 An `RPC` object calls remote function or accepts remote function from other `RPC` object. In convention, we call the caller `client` and the callee `server`. Because the `server` `RPC` object provides a remote function to be called, it also has the name `service`.
 

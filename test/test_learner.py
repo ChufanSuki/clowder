@@ -30,6 +30,6 @@ class TestLearner:
 
   def test_learner_run_no_limit(self):
     learner = StepCountingLearner(100)
-    with pytest.raise(StopIteration):
+    with pytest.raises(StopIteration):
       learner.run()
     assert learner.step_count == 100
