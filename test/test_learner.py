@@ -2,7 +2,7 @@ from typing import List
 
 from clowder.learner import Learner
 from clowder import specs
-
+import pytest
 
 class StepCountingLearner(Learner):
   """A learner which counts `num_steps` and then raises `StopIteration`."""
