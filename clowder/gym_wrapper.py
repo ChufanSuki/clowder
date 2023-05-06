@@ -185,12 +185,12 @@ class GymAtariAdapter(GymWrapper):
         if self._reset_next_step:
             return self.reset()
 
-        observation, reward, done, _ = self._environment.step(action[0].item())
-        self._reset_next_step = done
+        observation, reward, terminated, truncated, info = self._environment.step(action[0].item())
+        self._reset_next_step = terminated or truncated
 
         observation = self._wrap_observation(observation)
 
-        if done:
+        if terminated or truncated:
             return dm_env.termination(reward, observation)
         return dm_env.transition(reward, observation)
 

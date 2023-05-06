@@ -14,6 +14,7 @@ extra:
 nav:
     - Home: index.md
     - Environment: environment.md
+    - Actor: actor.md
     - RPC: rpc.md
 
 markdown_extensions:
