@@ -107,7 +107,7 @@ class WorkerList:
     def append(self, worker: Worker) -> None:
         self.workers.append(worker)
 
-    def extend(self, workers: Union[WorkerList, Sequence[Worker]]) -> None:
+    def extend(self, workers: Union['WorkerList', Sequence[Worker]]) -> None:
         if isinstance(workers, WorkerList):
             self.workers.extend(workers.workers)
         else:
