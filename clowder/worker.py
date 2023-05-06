@@ -13,7 +13,7 @@ class Handle(abc.ABC):
   implemented in subclasses).
   """
 
-  def connect(self, worker: Worker, label: str) -> None:
+  def connect(self, worker: 'Worker', label: str) -> None:
     """Called to let this handle know about it's connecting to a worker.
 
     This is supposed to be called:
