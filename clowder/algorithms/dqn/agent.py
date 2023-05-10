@@ -5,6 +5,7 @@ from typing import Optional
 from clowder.agent import Agent
 from clowder import loggers
 from clowder import specs
+from clowder.adders import reverb as adders
 import reverb
 
 class DQN(Agent):

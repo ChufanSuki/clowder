@@ -4,7 +4,7 @@ from typing import Optional
 
 from clowder import environment_loop
 from clowder import specs
-from test import mocks
+from tests import mocks
 import numpy as np
 from dm_env.specs import Array, BoundedArray, DiscreteArray
 

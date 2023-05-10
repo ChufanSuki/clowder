@@ -2,10 +2,12 @@ from dm_env import specs
 import dm_env
 from typing import Any, Union, Mapping, Sequence, Optional, Union
 import numpy as np
-from torch import Tensor
-
+import torch 
+import tensorflow as tf
+import tree
 from dataclasses import dataclass
 
+Tensor = Union[tf.Tensor, torch.Tensor]
 NestedSpec = Union[specs.Array, Mapping[Any, 'NestedSpec'],
                    Sequence['NestedSpec']]
 NestedArray = Union[np.ndarray, np.number, Mapping[Any, "NestedArray"],
@@ -15,6 +17,11 @@ NestedTensor = Union[Tensor, Mapping[Any, "NestedTensor"],
 
 Nest = Union[NestedArray, NestedSpec, NestedTensor]
 
+def nestedarray_to_nestedtensor(nestedarray: NestedArray) -> NestedTensor:
+    return tree.map_structure(torch.from_numpy, nestedarray)
+
+def nestedtensor_to_nestedarray(nestedtensor: NestedTensor) -> NestedArray:
+    return tree.map_structure(np.asarray, nestedtensor)
 
 @dataclass
 class EnvironmentSpec:
