@@ -11,7 +11,7 @@ import torch
 def _make_fake_env() -> dm_env.Environment:
     env_spec = specs.EnvironmentSpec(
         observations=Array(shape=(10, 5), dtype=np.float32),
-        actions=DiscreteArray(num_values=3),
+        actions=DiscreteArray(num_values=3, dtype=np.int64),
         rewards=Array(shape=(), dtype=np.float32),
         discounts=BoundedArray(
             shape=(), dtype=np.float32, minimum=0., maximum=1.),
